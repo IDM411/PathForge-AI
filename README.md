@@ -1,4 +1,4 @@
-# AI Learning Architect
+# PathForge AI
 
 This project now has a no-AI live browsing path as its default behavior, plus optional bring-your-own AI integrations.
 

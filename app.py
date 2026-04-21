@@ -367,16 +367,16 @@ def render_page(
     result_section = """
     <section class="summary-card empty-state">
       <span class="section-kicker">Start here</span>
-      <h2>Build a roadmap without filling everything in.</h2>
-      <p>Start with a topic and only the details you already know. The planner can infer missing pieces, explain the assumptions it made, and turn them into a step-by-step path.</p>
+      <h2>Start with a topic.</h2>
+      <p>Answer only what you know and the planner fills the rest.</p>
       <div class="empty-state-grid">
         <div class="empty-state-panel">
-          <span class="guidance-label">Best first step</span>
-          <p>Use <strong>Start new path</strong> if you want the app to ask one question at a time.</p>
+          <span class="guidance-label">Guided</span>
+          <p>Use <strong>Start new path</strong> for a quick question-by-question setup.</p>
         </div>
         <div class="empty-state-panel">
-          <span class="guidance-label">Fastest path</span>
-          <p>Type a topic, choose a mode, and build immediately if you already know what you want.</p>
+          <span class="guidance-label">Quick start</span>
+          <p>Choose a mode and generate right away.</p>
         </div>
       </div>
       <div class="example-wrap">
@@ -1596,13 +1596,13 @@ def render_page(
       <header class="app-header">
         <div class="app-header-copy">
           <span class="kicker">AI Learning Architect</span>
-          <h1>Build clearer learning paths with fresh resources and a guided start.</h1>
-          <p>Choose browse, offline, or your own AI provider. The planner keeps the path practical, explains why each resource was chosen, and now keeps progress as you work through it.</p>
+          <h1>Build a learning path in minutes.</h1>
+          <p>Pick a mode, answer a few prompts, and get a practical weekly roadmap.</p>
         </div>
         <div class="app-header-actions">
           <button type="button" class="button-primary-inline open-wizard-trigger">{wizard_button_label}</button>
           <button type="button" class="button-secondary-inline open-settings-trigger">AI settings</button>
-          <div class="hero-note compact">Browse and offline modes do not require AI. If you choose an AI provider, the app uses your own keys or local endpoint.</div>
+          <div class="hero-note compact">Browse and offline need no API key. AI modes use your own keys.</div>
         </div>
       </header>
     <section class="layout">

@@ -1,58 +1,75 @@
 # PathForge AI
 
-This project now has a no-AI live browsing path as its default behavior, plus optional bring-your-own AI integrations.
+Open-source learning roadmap generator focused on practical, job-aligned outcomes with free resources first.
+It works without paid AI by default, while still letting users plug in their own provider when they want it.
 
-The roadmap is generated locally from curated topic profiles and scheduling logic. Resource freshness comes from direct public web discovery, not an AI provider or paid search API, so anyone can use it without an API key. If you want AI assistance, you can plug in your own local or hosted provider instead of being locked to one vendor.
+## Why This Exists
 
-## Run it
+Most roadmap tools are either too generic or too locked behind paid AI.
+Learning Path AI is designed to stay accessible, practical, and current by combining local planning logic with live public-web resource discovery.
 
-Browser app:
+## Core Features
+
+- Free-first resource strategy with quality and timeline checks.
+- Weekly, modular roadmaps aligned to job goals and specializations.
+- Live non-AI web discovery from trusted learning domains.
+- Direct launchable resource links with durable direct-site fallback.
+- Guided browser wizard plus progress checklist and completion bar.
+- Optional bring-your-own AI providers: Ollama, OpenAI, Gemini, Anthropic, DeepSeek, Perplexity, and OpenAI-compatible endpoints.
+
+## Quick Start
+
+Requirements:
+
+- Python 3.10+
+
+Run the browser app:
 
 ```powershell
 python app.py
 ```
 
-The browser UI now starts with a blank guided flow instead of a prefilled demo request. You can either:
+Open `http://127.0.0.1:8000`, click `Start new path`, answer the prompts, and generate your roadmap.
 
-- click `Start new path` and answer questions one at a time in the popup wizard
-- switch to raw JSON or plain-text input if you prefer
-- switch between `Card grid` and `Compact list` roadmap views for easier scanning on longer plans
+## CLI Usage
 
-CLI with live non-AI browsing:
+Default mode (`browse`) uses live non-AI discovery:
 
 ```powershell
 python learning_architect.py demo_request.json
 ```
 
-CLI with offline-only fallback:
+Offline-only mode:
 
 ```powershell
 python learning_architect.py demo_request.json --provider offline
 ```
 
-Preview the OpenAI request payload:
+You can also pass plain text via stdin:
 
 ```powershell
-python learning_architect.py demo_request.json --provider offline --preview-openai-payload
+"Machine Learning for MLOps" | python learning_architect.py
 ```
 
-Optional OpenAI path:
+Preview normalized AI messages:
 
 ```powershell
-$env:OPENAI_API_KEY="your_key_here"
+python learning_architect.py demo_request.json --preview-ai-messages
+```
+
+Preview OpenAI request payload:
+
+```powershell
+python learning_architect.py demo_request.json --preview-openai-payload
+```
+
+## Optional AI Providers
+
+Example commands:
+
+```powershell
 python learning_architect.py demo_request.json --provider openai
-```
-
-Optional local open-source path with Ollama:
-
-```powershell
-ollama serve
 python learning_architect.py demo_request.json --provider ollama --model llama3.1:8b
-```
-
-Other optional AI providers:
-
-```powershell
 python learning_architect.py demo_request.json --provider gemini
 python learning_architect.py demo_request.json --provider anthropic
 python learning_architect.py demo_request.json --provider deepseek
@@ -60,55 +77,55 @@ python learning_architect.py demo_request.json --provider perplexity
 python learning_architect.py demo_request.json --provider openai_compatible --model your-model
 ```
 
-## What changed
-
-- `browse` is still the default provider
-- live resource discovery uses public DuckDuckGo HTML search and trusted-domain scoring, with no API key required
-- the app renders weekly cards with clickable resources and live or fallback badges
-- offline generation still works if live browsing cannot fetch strong results
-- AI is now optional and pluggable: `ollama`, `openai`, `gemini`, `anthropic`, `deepseek`, `perplexity`, and `openai_compatible`
-
-## Resource discovery
-
-The live discovery layer looks for fresh resources from the public web and prefers trusted free-learning domains such as:
-
-- official documentation sites
-- GitHub
-- YouTube
-- freeCodeCamp
-- MIT OpenCourseWare
-- Khan Academy
-- Coursera free pages
-- fast.ai
-
-If a strong live result cannot be fetched, the app falls back to a durable search link instead of failing.
-
-## AI provider environment variables
+Environment variables:
 
 - `OPENAI_API_KEY`
 - `GEMINI_API_KEY`
 - `ANTHROPIC_API_KEY`
 - `DEEPSEEK_API_KEY`
 - `PERPLEXITY_API_KEY`
-- `OLLAMA_BASE_URL` for local Ollama if not using `http://127.0.0.1:11434`
-- `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`, and `OPENAI_COMPATIBLE_MODEL` for any compatible local or hosted endpoint
+- `OLLAMA_BASE_URL` (optional, defaults to `http://127.0.0.1:11434`)
+- `OPENAI_COMPATIBLE_BASE_URL`
+- `OPENAI_COMPATIBLE_API_KEY`
+- `OPENAI_COMPATIBLE_MODEL`
 
-The AI integrations use your own access. If you do not have keys, the browse and offline modes still work fully.
+## Input Shape
 
-## Input shape
+Supports either a plain topic string or a JSON object.
+Common fields include:
 
-You can pass either:
+- `topic`
+- `experience_level`
+- `schedule_length`
+- `time_available_per_week`
+- `target_job_title`
+- `job_industry_focus`
+- `domain_specialization`
+- `secondary_goal`
+- `custom_modifications`
 
-- A plain topic string like `Machine Learning`
-- A JSON object containing any mix of:
-  - `topic`
-  - `experience_level`
-  - `schedule_length`
-  - `job_industry_focus`
-  - `custom_modifications`
-  - `secondary_goal`
-  - `domain_specialization`
-  - `time_available_per_week`
-  - `target_job_title`
+Common aliases such as `subject`, `level`, and `hours per week` are normalized automatically.
 
-Common aliases such as `subject`, `level`, `hours per week`, and `industry focus` are normalized automatically.
+## Resource Quality Policy
+
+- Prioritize high-trust free sources (official docs, freeCodeCamp, MIT OCW, Khan Academy, fast.ai, GitHub, selected YouTube).
+- Reject weak or paid-signaling hits when stronger free options are available.
+- Enforce weekly time caps by time-boxing or replacing overly long resources with focused alternatives.
+
+## Run Tests
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+## Project Structure
+
+- `app.py`: Browser UI server and interactive workflow.
+- `learning_architect.py`: Roadmap generation, normalization, review, and provider dispatch.
+- `resource_discovery.py`: Live non-AI discovery and trusted-domain ranking.
+- `tests/`: Unit tests for UI rendering, roadmap logic, and discovery behavior.
+
+## Contributing
+
+Issues and pull requests are welcome.
+If you contribute, prioritize free-accessible resources, realistic weekly scope, and clear job relevance.

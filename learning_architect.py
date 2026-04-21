@@ -10,7 +10,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from resource_discovery import discover_best_resources
+from resource_discovery import build_direct_topic_url, discover_best_resources, find_curated_exact_resource
 
 
 SYSTEM_PROMPT = """You are an AI Learning Architect integrated with job market intelligence. Your task is to design modular, goal-oriented learning roadmaps for any subject, with a strong preference for free-to-learn resources and practical, career-relevant outcomes.
@@ -1192,6 +1192,32 @@ def _combined_text(normalized_input: Dict[str, Any]) -> str:
     return " ".join(str(part).lower() for part in parts if part)
 
 
+def _compact_query_phrase(value: str, max_terms: int = 8) -> str:
+    tokens = re.findall(r"[a-zA-Z0-9\+\#\.-]+", str(value or "").lower())
+    stop = {
+        "and",
+        "or",
+        "the",
+        "a",
+        "an",
+        "for",
+        "with",
+        "toward",
+        "into",
+        "from",
+        "that",
+        "this",
+        "week",
+        "project",
+        "practical",
+        "focused",
+        "module",
+    }
+    filtered = [token for token in tokens if token not in stop and len(token) > 1]
+    compact = filtered[:max_terms] if filtered else tokens[:max_terms]
+    return " ".join(compact).strip()
+
+
 def _choose_profile(normalized_input: Dict[str, Any]) -> Dict[str, Any]:
     haystack = _combined_text(normalized_input)
     best_profile = GENERIC_PROFILE
@@ -1237,6 +1263,22 @@ def _resource_source_type(query: str) -> str:
 
 
 def _source_default_domain(source_type: str, query: str) -> str:
+    by_source = {
+        "Official documentation": "docs.python.org",
+        "GitHub repository": "github.com",
+        "YouTube tutorial": "youtube.com",
+        "freeCodeCamp": "freecodecamp.org",
+        "Khan Academy": "khanacademy.org",
+        "Coursera free tier": "coursera.org",
+        "MIT OpenCourseWare": "ocw.mit.edu",
+        "fast.ai": "fast.ai",
+        "Free web resource": "github.com",
+    }
+    # Preserve explicit source intent (GitHub/YouTube/etc.) so links stay aligned
+    # with the recommended resource type.
+    if source_type and source_type != "Official documentation":
+        return by_source.get(source_type, "github.com")
+
     lowered = query.lower()
     keyword_domains = {
         "postgresql": "postgresql.org",
@@ -1262,17 +1304,6 @@ def _source_default_domain(source_type: str, query: str) -> str:
         if keyword in lowered:
             return domain
 
-    by_source = {
-        "Official documentation": "docs.python.org",
-        "GitHub repository": "github.com",
-        "YouTube tutorial": "youtube.com",
-        "freeCodeCamp": "freecodecamp.org",
-        "Khan Academy": "khanacademy.org",
-        "Coursera free tier": "coursera.org",
-        "MIT OpenCourseWare": "ocw.mit.edu",
-        "fast.ai": "fast.ai",
-        "Free web resource": "github.com",
-    }
     return by_source.get(source_type, "github.com")
 
 
@@ -1283,8 +1314,14 @@ def _ensure_direct_resource_url(resource: Dict[str, Any]) -> Dict[str, Any]:
 
     source_type = str(resource.get("source_type") or "Free web resource")
     query = str(resource.get("search_query") or resource.get("title") or "")
+    curated = find_curated_exact_resource(query, source_type)
+    if curated:
+        resource["url"] = str(curated.get("url") or "")
+        resource["title"] = str(resource.get("title") or curated.get("title") or query)
+        resource["source_type"] = str(curated.get("source_label") or source_type)
+        return resource
     domain = _source_default_domain(source_type, query)
-    resource["url"] = f"https://{domain}/"
+    resource["url"] = build_direct_topic_url(domain, query)
     return resource
 
 
@@ -1309,15 +1346,16 @@ def _has_paid_signal(*values: str) -> bool:
 
 
 def _trusted_free_resource_template(week_focus: str, resource_index: int) -> Dict[str, str]:
+    focus_phrase = _compact_query_phrase(week_focus, max_terms=8) or "core concepts"
     role = _resource_role(resource_index)
     if role == "foundation":
-        query = f"Official documentation {week_focus} getting started quickstart"
+        query = f"Official documentation {focus_phrase} getting started quickstart"
         source_type = "Official documentation"
     elif role == "guided practice":
-        query = f"freeCodeCamp {week_focus} project based tutorial free"
+        query = f"freeCodeCamp {focus_phrase} project based tutorial free"
         source_type = "freeCodeCamp"
     else:
-        query = f"GitHub {week_focus} practical project example"
+        query = f"GitHub {focus_phrase} practical project example"
         source_type = "GitHub repository"
     return {
         "search_query": query,
@@ -1463,7 +1501,7 @@ def _review_resource(
 ) -> Dict[str, Any]:
     query = str(resource.get("search_query") or resource.get("title") or "").strip()
     if not query:
-        query = f"{week_focus} practical tutorial free"
+        query = f"{_compact_query_phrase(week_focus, max_terms=8) or 'core concepts'} practical tutorial free"
     resource["search_query"] = query
     resource["title"] = str(resource.get("title") or query)
     resource["url"] = str(resource.get("url") or "")
@@ -1478,6 +1516,7 @@ def _review_resource(
         str(resource.get("url") or ""),
     ):
         resource.update(_trusted_free_resource_template(week_focus, resource_index))
+        resource["url"] = ""
 
     resource = _ensure_direct_resource_url(resource)
 
@@ -1493,12 +1532,14 @@ def _review_resource(
             "Adjusted to a shorter high-quality free option so it can realistically fit this week's time cap."
         )
         resource.update(quickstart)
+        resource["url"] = ""
         resource = _ensure_direct_resource_url(resource)
         estimated_minutes = _estimate_resource_minutes(resource)
 
     quality_score = _resource_quality_score(resource)
     if quality_score < 3:
         resource.update(_trusted_free_resource_template(week_focus, resource_index))
+        resource["url"] = ""
         resource = _ensure_direct_resource_url(resource)
         estimated_minutes = _estimate_resource_minutes(resource)
         quality_score = _resource_quality_score(resource)
@@ -1979,10 +2020,12 @@ def generate_roadmap_browse(
                 resource["access_note"] = "Direct free resource found from current public web search results."
             else:
                 fallback_hits += 1
-                resource["title"] = resource_query
+                resource["title"] = str(detail.get("title") or resource_query)
                 resource["url"] = str(detail.get("url") or "")
+                if detail.get("source_label"):
+                    resource["source_type"] = str(detail.get("source_label"))
                 resource["access_note"] = (
-                    "Direct-site fallback used. Open the target site and use the query/topic wording to jump to the exact lesson or guide if needed."
+                    "Validated exact fallback resource used because a direct current page for the original suggestion could not be confirmed."
                 )
             week_details.append(detail)
             if detail.get("live") and resource["url"] and resource["url"] not in seen_urls:

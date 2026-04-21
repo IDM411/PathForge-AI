@@ -186,7 +186,7 @@ def _render_week_cards(
                 title_html = f"<span class='resource-title'>{html.escape(str(resource.get('title') or resource.get('search_query') or 'Resource'))}</span>"
                 action_html = (
                     f"<a class='resource-action secondary' href='{html.escape(url)}' "
-                    f"target='_blank' rel='noreferrer'>Open source site</a>"
+                    f"target='_blank' rel='noreferrer'>Open topic link</a>"
                     if url
                     else "<span class='resource-action disabled'>Direct link unavailable</span>"
                 )

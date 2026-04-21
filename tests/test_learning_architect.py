@@ -222,6 +222,25 @@ class LearningArchitectTests(unittest.TestCase):
         self.assertIn("minutes", reviewed["time_fit"].lower())
         self.assertIn("timeline cap", reviewed["access_note"].lower())
 
+    def test_review_resource_builds_exact_direct_alternative_url(self) -> None:
+        resource = {
+            "search_query": "GitHub React authentication project example",
+            "title": "GitHub React authentication project example",
+            "url": "",
+            "source_type": "GitHub repository",
+            "access_note": "",
+            "why_this_resource": "",
+            "contribution_to_path": "",
+            "primary_focus": "",
+            "time_fit": "",
+            "use_strategy": "",
+        }
+
+        reviewed = _review_resource(resource, resource_index=2, week_focus="React authentication", hours_per_week=6)
+
+        self.assertEqual(reviewed["url"], "https://react.dev/learn")
+        self.assertEqual(reviewed["source_type"], "Official documentation")
+
     @patch("learning_architect._http_json_request")
     def test_ollama_provider_parses_json_content(self, mock_http_json_request) -> None:
         mock_http_json_request.return_value = {

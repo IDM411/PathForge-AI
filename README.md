@@ -112,6 +112,11 @@ Common aliases such as `subject`, `level`, and `hours per week` are normalized a
 - Reject weak or paid-signaling hits when stronger free options are available.
 - Enforce weekly time caps by time-boxing or replacing overly long resources with focused alternatives.
 
+## Known Limitations
+
+Some topic combinations and fallback pairings are still being refined, so a few edge-case roadmaps may not align perfectly yet.
+This is an active area of cleanup and will be improved in later updates.
+
 ## Run Tests
 
 ```powershell

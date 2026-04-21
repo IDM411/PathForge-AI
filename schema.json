@@ -1,0 +1,53 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "industry_insight",
+    "weekly_breakdown",
+    "adjustment_log"
+  ],
+  "properties": {
+    "industry_insight": {
+      "type": "string",
+      "description": "Exactly two sentences explaining why the skill is trending and valuable."
+    },
+    "weekly_breakdown": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "week",
+          "focus",
+          "resources",
+          "hands_on_project"
+        ],
+        "properties": {
+          "week": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "focus": {
+            "type": "string"
+          },
+          "resources": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "string"
+            }
+          },
+          "hands_on_project": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "adjustment_log": {
+      "type": "string",
+      "description": "Brief explanation of how the roadmap was adapted and what assumptions were inferred."
+    }
+  }
+}
